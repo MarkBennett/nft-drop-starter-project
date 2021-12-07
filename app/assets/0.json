@@ -1,0 +1,19 @@
+{
+    "name": "Penguin",
+    "symbol": "",
+    "image": "0.png",
+    "properties": {
+        "files": [
+            {
+                "uri": "0.png",
+                "type": "image/png"
+            }
+        ],
+        "creators": [
+            {
+                "address": "DF3Xodbiz5DyRZhyyF34ayuG2WPsiyz3qSsK7mm7FWrY",
+                "share": 100
+            }
+        ]
+    }
+}
