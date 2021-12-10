@@ -9,7 +9,7 @@ SHELL ["/bin/bash", "-l", "-euxo", "pipefail", "-c"]
 
 # install nvm
 ENV NVM_DIR /usr/local/nvm
-ARG NODE_VERSION=17.2.0
+ARG NODE_VERSION=16.13.1
 
 RUN mkdir -p "$NVM_DIR" \
     && curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
