@@ -23,8 +23,8 @@ RUN source $NVM_DIR/nvm.sh \
 ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
-# Install ts-node as we'll need it for this example
-RUN npm install -g ts-node
+# Install yarn and ts-node as we'll need it for this example
+RUN npm install -g ts-node yarn
 
 # Install Solana
 ENV SOLANA_PATH /usr/local/solana
