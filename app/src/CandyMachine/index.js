@@ -27,6 +27,9 @@ const MAX_CREATOR_LEN = 32 + 1 + 1;
 const CandyMachine = ({ walletAddress }) => {
   // Add state property inside your component like this
   const [machineStats, setMachineStats] = useState(null);
+  const [mints, setMints] = useState([]);
+  const [isMinting, setIsMinting] = useState(false);
+  const [isLoadingMints, setIsLoadingMints] = useState(false);
 
   // Effects
   useEffect(() => {
@@ -47,23 +50,21 @@ const CandyMachine = ({ walletAddress }) => {
 
     return provider;
   };
-const getCandyMachineState = async () => { 
+  const getCandyMachineState = async () => {
     const provider = getProvider();
     const idl = await Program.fetchIdl(candyMachineProgram, provider);
     const program = new Program(idl, candyMachineProgram, provider);
     const candyMachine = await program.account.candyMachine.fetch(
       process.env.REACT_APP_CANDY_MACHINE_ID
     );
-    
+
     const itemsAvailable = candyMachine.data.itemsAvailable.toNumber();
     const itemsRedeemed = candyMachine.itemsRedeemed.toNumber();
     const itemsRemaining = itemsAvailable - itemsRedeemed;
     const goLiveData = candyMachine.data.goLiveDate.toNumber();
-  
-    const goLiveDateTimeString = `${new Date(
-      goLiveData * 1000
-    ).toGMTString()}`
-  
+
+    const goLiveDateTimeString = `${new Date(goLiveData * 1000).toGMTString()}`;
+
     // Add this data to your state to render
     setMachineStats({
       itemsAvailable,
@@ -72,7 +73,7 @@ const getCandyMachineState = async () => {
       goLiveData,
       goLiveDateTimeString,
     });
-  
+
     console.log({
       itemsAvailable,
       itemsRedeemed,
@@ -80,6 +81,29 @@ const getCandyMachineState = async () => {
       goLiveData,
       goLiveDateTimeString,
     });
+
+    setIsLoadingMints(true);
+
+    const data = await fetchHashTable(
+      process.env.REACT_APP_CANDY_MACHINE_ID,
+      true
+    );
+
+    if (data.length !== 0) {
+      for (const mint of data) {
+        // Get URI
+        const response = await fetch(mint.data.uri);
+        const parse = await response.json();
+        console.log("Past Minted NFT", mint);
+
+        // Get image URI
+        if (!mints.find((mint) => mint === parse.image)) {
+          setMints((prevState) => [...prevState, parse.image]);
+        }
+      }
+    }
+
+    setIsLoadingMints(false);
   };
 
   // Actions
@@ -166,6 +190,7 @@ const getCandyMachineState = async () => {
 
   const mintToken = async () => {
     try {
+      setIsMinting(true);
       const mint = web3.Keypair.generate();
       const token = await getTokenWallet(
         walletAddress.publicKey,
@@ -250,6 +275,8 @@ const getCandyMachineState = async () => {
             const { result } = notification;
             if (!result.err) {
               console.log("NFT Minted!");
+              setIsMinting(false);
+              await getCandyMachineState();
             }
           }
         },
@@ -257,6 +284,8 @@ const getCandyMachineState = async () => {
       );
     } catch (error) {
       let message = error.msg || "Minting failed! Please try again!";
+
+      setIsMinting(false);
 
       if (!error.msg) {
         if (error.message.indexOf("0x138")) {
@@ -307,15 +336,34 @@ const getCandyMachineState = async () => {
     });
   };
 
+  const renderMintedItems = () => (
+    <div className="gif-container">
+      <p className="sub-text">Minted Items ✨</p>
+      <div className="gif-grid">
+        {mints.map((mint) => (
+          <div className="gif-item" key={mint}>
+            <img src={mint} alt={`Minted NFT ${mint}`} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
-    // Only show this if machineStats is available
     machineStats && (
       <div className="machine-container">
         <p>{`Drop Date: ${machineStats.goLiveDateTimeString}`}</p>
         <p>{`Items Minted: ${machineStats.itemsRedeemed} / ${machineStats.itemsAvailable}`}</p>
-        <button className="cta-button mint-button" onClick={mintToken}>
-            Mint NFT
+        <button
+          className="cta-button mint-button"
+          onClick={mintToken}
+          disabled={isMinting}
+        >
+          Mint NFT
         </button>
+        {/* If we have mints available in our array, let's render some items */}
+        {isLoadingMints && <p>LOADING MINTS...</p>}
+        {mints.length > 0 && renderMintedItems()}
       </div>
     )
   );
